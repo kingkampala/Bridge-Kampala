@@ -1,9 +1,22 @@
 const { Sequelize, DataTypes, Model } = require('sequelize');
 import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
 
-const sequelize = new Sequelize(process.env.DB_URL);
+dotenv.config();
 
-export class User extends Model {}
+const db = process.env.DB_URL;
+
+const sequelize = new Sequelize(db, {
+  dialect: 'postgres',
+});
+
+export class User extends Model {
+  id!: number;
+  name!: string;
+  email!: string;
+  password!: string;
+  userType!: 'landlord' | 'tenant';
+}
 
 User.init({
   id: {
@@ -26,10 +39,6 @@ User.init({
   password: {
     type: DataTypes.STRING,
     allowNull: false,
-    set(value) {
-      const hashedPassword = bcrypt.hashSync(value, 10);
-      this.setDataValue('password', hashedPassword);
-    },
   },
   userType: {
     type: DataTypes.ENUM('landlord', 'tenant'),
@@ -38,10 +47,27 @@ User.init({
 }, {
   sequelize,
   modelName: 'User',
-  tableName: 'users'
+  tableName: 'users',
+  hooks: {
+    beforeValidate: (user: User) => {
+      if (user.changed('password')) {
+        const hashedPassword = bcrypt.hashSync(user.password, 10);
+        user.password = hashedPassword;
+      }
+    },
+  }
 });
 
-export class Property extends Model {}
+export class Property extends Model {
+  id!: number;
+  landlordId!: number;
+  price!: number;
+  location!: string;
+  rooms!: number;
+  amenities!: string[] | null;
+  images!: string[] | null;
+  videos!: string[] | null;
+}
 
 Property.init({
   id: {
@@ -80,7 +106,14 @@ Property.init({
   tableName: 'properties'
 });
 
-export class Bid extends Model {}
+export class Bid extends Model {
+  id!: number;
+  propertyId!: number;
+  tenantId!: number;
+  bidAmount!: number;
+  status!: 'open' | 'accepted' | 'rejected' | 'countered';
+  counterBidAmount!: number | null;
+}
 
 Bid.init({
   id: {
@@ -122,7 +155,15 @@ Bid.belongsTo(User, { foreignKey: 'tenantId' });
 Property.hasMany(Bid, { foreignKey: 'propertyId' });
 Bid.belongsTo(Property, { foreignKey: 'propertyId' });
 
-export class Transaction extends Model {}
+export class Transaction extends Model {
+  id!: number;
+  propertyId!: number;
+  tenantId!: number;
+  landlordId!: number;
+  bidId!: number;
+  transactionAmount!: number;
+  status!: 'initiated' | 'completed';
+}
 
 Transaction.init({
   id: {
@@ -159,5 +200,3 @@ Transaction.init({
   modelName: 'Transaction',
   tableName: 'transactions'
 });
-
-//export default { User, Property, Bid, Transaction };

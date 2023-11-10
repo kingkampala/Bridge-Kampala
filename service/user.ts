@@ -1,26 +1,66 @@
 import { injectable } from 'inversify';
 import { User } from '../models/schema';
+import bcrypt from 'bcrypt';
 
 @injectable()
 export class UserService {
   async getAllUsers() {
-    return User.findAll();
+    return User.find();
   }
 
   async getUserById(userId: number) {
-    return User.findByPk(userId);
+    return User.findOne(userId);
   }
 
-  async createUser(userData: any) {
-    return User.create(userData);
+  async createUser(userData: { name: string; email: string; password: string }) {
+    const user = new User();
+    user.name = userData.name;
+    user.email = userData.email;
+    user.password = userData.password;
+    return user.save();
   }
 
-  async updateUser(userId: number, userData: any) {
-    await User.update(userData, { where: { id: userId } });
-    return User.findByPk(userId);
+  async updateUser(userId: number, userData: { name: string; email: string; password: string }) {
+    const user = await User.findOne(userId);
+
+    if (user) {
+      user.name = userData.name;
+      user.email = userData.email;
+      user.password = userData.password;
+      await user.save();
+      return user;
+    }
+
+    return null;
   }
 
   async deleteUser(userId: number) {
-    await User.destroy({ where: { id: userId } });
+    const user = await User.findOne(userId);
+
+    if (user) {
+      await user.remove();
+    }
+  }
+
+  async authenticateUser(email: string, password: string): Promise<User | null> {
+    const user = await User.findOne({ where: { email } });
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      return user;
+    }
+
+    return null;
+  }
+
+  async verifyEmail(userId: number): Promise<boolean> {
+    const user = await User.findOne(userId);
+
+    if (user) {
+      user.verified = true;
+      await user.save();
+      return true;
+    }
+
+    return false;
   }
 }

@@ -12,11 +12,12 @@ export class UserService {
     return User.findOne(userId);
   }
 
-  async createUser(userData: { name: string; email: string; password: string }) {
+  async createUser(userData: { name: string; email: string; password: string; userType: string }) {
     const user = new User();
     user.name = userData.name;
     user.email = userData.email;
     user.password = userData.password;
+    user.userType = userData.userType;
     return user.save();
   }
 

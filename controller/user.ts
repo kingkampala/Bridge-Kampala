@@ -52,7 +52,7 @@ export class UserController {
   }
 
   @httpPost('/register')
-  async registerUser(@requestBody() userData: { name: string; email: string; password: string }, res: Response) {
+  async registerUser(@requestBody() userData: { name: string; email: string; password: string; userType: string }, res: Response) {
     try {
       const newUser = await this.userService.createUser(userData);
       res.status(201).json(newUser);

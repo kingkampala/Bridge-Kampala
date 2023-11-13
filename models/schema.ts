@@ -15,7 +15,7 @@ export class User extends Model {
   name!: string;
   email!: string;
   password!: string;
-  userType!: 'landlord' | 'tenant';
+  userType!: string;
 }
 
 User.init({

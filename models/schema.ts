@@ -8,6 +8,12 @@ const db = process.env.DB_URL;
 
 const sequelize = new Sequelize(db, {
   dialect: 'postgres',
+  dialectOptions: {
+    ssl: {
+    require: true,
+    rejectUnauthorized: false
+    },
+}
 });
 
 export class User extends Model {

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { controller, httpGet, httpPost, httpPut, httpDelete, requestBody } from 'inversify-express-utils';
+import { controller, httpGet, httpPost, httpPut, httpDelete, requestBody, response } from 'inversify-express-utils';
+import { UniqueConstraintError } from 'sequelize';
 import { inject } from 'inversify';
 import TYPES from '../main/types';
 import { UserService } from '../service/user';
@@ -10,7 +11,9 @@ export class UserController {
 
   @httpGet('/')
   async getAllUsers(req: Request, res: Response) {
-    const users = await this.userService.getAllUsers();
+    const users = await this.userService.getAllUsers({
+      attributes: { exclude: ['password'] }
+    });
     res.json(users);
   }
 
@@ -23,12 +26,15 @@ export class UserController {
 
   @httpPost('/')
   async createUser(req: Request, res: Response) {
-    try{
+    try {
       const newUser = await this.userService.createUser(req.body);
-      res.status(201).json(newUser);
+      res.status(201).json({ message: 'user created successfully', newUser });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      if (error instanceof UniqueConstraintError) {
+        return res.status(400).json({ error: 'user with this email already exists.' });
+      }
+      res.status(500).json({ error: 'internal Server Error' });
     }
   }
 
@@ -38,9 +44,9 @@ export class UserController {
     const updatedUser = await this.userService.updateUser(userId, req.body);
 
     if (updatedUser) {
-      res.json(updatedUser);
+      res.status(201).json({ message: 'user updated successfully', updatedUser });
     } else {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'user not found' });
     }
   }
 
@@ -48,29 +54,41 @@ export class UserController {
   async deleteUser(req: Request, res: Response) {
     const userId = parseInt(req.params.id, 10);
     await this.userService.deleteUser(userId);
-    res.sendStatus(204);
+    res.status(200).json({ message: 'user deleted successfully' });
   }
 
   @httpPost('/register')
-  async registerUser(@requestBody() userData: { name: string; email: string; password: string; userType: string }, res: Response) {
+  async registerUser(@requestBody() userData: { name: string; email: string; password: string; userType: string }, @response() res: Response) {
     try {
       const newUser = await this.userService.createUser(userData);
-      res.status(201).json(newUser);
+      res.status(201).json({ message: 'user registered successfully', newUser });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      if (error instanceof UniqueConstraintError) {
+        return res.status(400).json({ error: 'user with this email already exists.' });
+      }
+      res.status(500).json({ error: 'internal Server Error' });
     }
   }
 
   @httpPost('/login')
-  async loginUser(req: Request, res: Response) {
-    const { email, password } = req.body;
-    const user = await this.userService.authenticateUser(email, password);
+  async loginUser(@requestBody() req: { email: string; password: string }, @response() res: Response) {
+    try {
+      const { email, password } = req;
+      if (!email || !password) {
+        return res.status(401).json({ error: 'email and password are required'})
+      }
 
-    if (user) {
-      res.json({ message: 'Login successful', user });
-    } else {
-      res.status(401).json({ error: 'Invalid credentials' });
+      const user = await this.userService.authenticateUser(email, password);
+
+      if (user) {
+        res.status(200).json({ message: 'login successful', user });
+      } else {
+        res.status(401).json({ error: 'invalid credentials' });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'internal server error' });
     }
   }
 
@@ -80,9 +98,9 @@ export class UserController {
     const isVerified = await this.userService.verifyEmail(userId);
 
     if (isVerified) {
-      res.json({ message: 'Email verification successful' });
+      res.json({ message: 'email verification successful' });
     } else {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'user not found' });
     }
   }
 }

@@ -1,0 +1,30 @@
+{
+  "development": {
+    "username": "kampala",
+    "password": "yQSYlzMs8hgx5yGYQa1ERpvvcsJLZKxf",
+    "database": "bridge_db",
+    "host": "dpg-cl5br0c72pts73ejgo2g-a.oregon-postgres.render.com",
+    "dialect": "postgres",
+    "dialectOptions": {
+      "timeout": 60000,
+      "ssl": {
+        "require": true,
+        "rejectUnauthorized": false
+      }
+    }
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  }
+}

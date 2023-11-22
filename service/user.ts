@@ -4,12 +4,12 @@ import bcrypt from 'bcrypt';
 
 @injectable()
 export class UserService {
-  async getAllUsers() {
-    return User.find();
+  async getAllUsers(options: any) {
+    return User.findAll();
   }
 
   async getUserById(userId: number) {
-    return User.findOne(userId);
+    return User.findByPk(userId);
   }
 
   async createUser(userData: { name: string; email: string; password: string; userType: string }) {
@@ -21,13 +21,14 @@ export class UserService {
     return user.save();
   }
 
-  async updateUser(userId: number, userData: { name: string; email: string; password: string }) {
-    const user = await User.findOne(userId);
+  async updateUser(userId: number, userData: { name: string; email: string; password: string; userType: string }) {
+    const user = await User.findByPk(userId);
 
     if (user) {
       user.name = userData.name;
       user.email = userData.email;
       user.password = userData.password;
+      user.userType = userData.userType;
       await user.save();
       return user;
     }
@@ -36,7 +37,7 @@ export class UserService {
   }
 
   async deleteUser(userId: number) {
-    const user = await User.findOne(userId);
+    const user = await User.findByPk(userId);
 
     if (user) {
       await user.remove();
@@ -54,7 +55,7 @@ export class UserService {
   }
 
   async verifyEmail(userId: number): Promise<boolean> {
-    const user = await User.findOne(userId);
+    const user = await User.findByPk(userId);
 
     if (user) {
       user.verified = true;

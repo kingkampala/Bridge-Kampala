@@ -56,7 +56,7 @@ User.init({
   tableName: 'users',
   hooks: {
     beforeValidate: (user: User) => {
-      if (user.changed('password')) {
+      if (user.changed('password') && user.isNewRecord) {
         const hashedPassword = bcrypt.hashSync(user.password, 10);
         user.password = hashedPassword;
       }
@@ -66,7 +66,6 @@ User.init({
 
 export class Property extends Model {
   id!: number;
-  landlordId!: number;
   price!: number;
   location!: string;
   rooms!: number;

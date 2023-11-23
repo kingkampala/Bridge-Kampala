@@ -4,6 +4,10 @@ import { UniqueConstraintError } from 'sequelize';
 import { inject } from 'inversify';
 import TYPES from '../main/types';
 import { UserService } from '../service/user';
+import jwt, { Secret } from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 @controller('/users')
 export class UserController {
@@ -34,7 +38,7 @@ export class UserController {
       if (error instanceof UniqueConstraintError) {
         return res.status(400).json({ error: 'user with this email already exists.' });
       }
-      res.status(500).json({ error: 'internal Server Error' });
+      res.status(500).json({ error: 'internal server error' });
     }
   }
 
@@ -58,9 +62,14 @@ export class UserController {
   }
 
   @httpPost('/register')
-  async registerUser(@requestBody() userData: { name: string; email: string; password: string; userType: string }, @response() res: Response) {
+  async registerUser(@requestBody() req: { name: string; email: string; password: string; userType: string }, @response() res: Response) {
     try {
-      const newUser = await this.userService.createUser(userData);
+      const { name, email, password, userType } = req;
+      if (!name || !email || !password || !userType) {
+        return res.status(401).json({ error: 'name, email, password and userType are required'})
+      }
+
+      const newUser = await this.userService.createUser(req);
       res.status(201).json({ message: 'user registered successfully', newUser });
     } catch (error) {
       console.error(error);
@@ -82,7 +91,20 @@ export class UserController {
       const user = await this.userService.authenticateUser(email, password);
 
       if (user) {
-        res.status(200).json({ message: 'login successful', user });
+        const { id, userType } = user;
+
+        const JwtKey = process.env.SECRET_KEY as Secret;
+
+        const tokenPayload = {
+          userId: id,
+          userType: userType,
+        };
+
+        const token = jwt.sign({ tokenPayload }, JwtKey, { expiresIn: '1h', algorithm: 'HS256' });
+
+        console.log('Generated Token:', token);
+
+        res.status(200).json({ message: 'login successful', user, token });
       } else {
         res.status(401).json({ error: 'invalid credentials' });
       }

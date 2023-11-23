@@ -25,10 +25,15 @@ export class UserService {
     const user = await User.findByPk(userId);
 
     if (user) {
+      if (userData.password) {
+        const hashedPassword = bcrypt.hashSync(userData.password, 10);
+        user.password = hashedPassword;
+      }
+
       user.name = userData.name;
       user.email = userData.email;
-      user.password = userData.password;
       user.userType = userData.userType;
+
       await user.save();
       return user;
     }

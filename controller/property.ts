@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { controller, httpGet, httpPost, httpPut, httpDelete } from 'inversify-express-utils';
+import { UniqueConstraintError } from 'sequelize';
 import { inject } from 'inversify';
 import TYPES from '../main/types';
 import { PropertyService } from '../service/property';
+import { authenticate } from '../middle/auth';
+import { CustomRequest } from '../middle/custom';
 
 @controller('/properties')
 export class PropertyController {
@@ -21,23 +24,40 @@ export class PropertyController {
     res.json(property);
   }
 
-  @httpPost('/')
-  async createProperty(req: Request, res: Response) {
-    const newProperty = await this.propertyService.createProperty(req.body);
-    res.status(201).json(newProperty);
+  @httpPost('/', authenticate)
+  async createProperty(req: CustomRequest, res: Response) {
+    try {
+      if (!req.landlordId) {
+        return res.status(403).json({ error: 'Forbidden. Only landlords can post properties.' });
+      }
+
+      const newProperty = await this.propertyService.createProperty(req, req.body);
+      res.status(201).json({ message: 'property created successfully', newProperty });
+    } catch (error) {
+      console.error(error);
+      if (error instanceof UniqueConstraintError) {
+        return res.status(400).json({ error: 'property already exists.' });
+      }
+      res.status(500).json({ error: 'internal server error' });
+    }
   }
 
   @httpPut('/:id')
   async updateProperty(req: Request, res: Response) {
     const propertyId = parseInt(req.params.id, 10);
     const updatedProperty = await this.propertyService.updateProperty(propertyId, req.body);
-    res.json(updatedProperty);
+
+    if (updatedProperty) {
+      res.status(201).json({ message: 'property updated successfully', updatedProperty });
+    } else {
+      res.status(404).json({ error: 'property not found' });
+    }
   }
 
   @httpDelete('/:id')
   async deleteProperty(req: Request, res: Response) {
     const propertyId = parseInt(req.params.id, 10);
     await this.propertyService.deleteProperty(propertyId);
-    res.sendStatus(204);
+    res.sendStatus(200).json({ message: 'property deleted successfully' });
   }
 }

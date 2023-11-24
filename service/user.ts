@@ -56,7 +56,7 @@ export class UserService {
       return user;
     }
 
-    return null;
+    throw new Error('invalid email or password');
   }
 
   async verifyEmail(userId: number): Promise<boolean> {

@@ -48,7 +48,7 @@ export class UserController {
     const updatedUser = await this.userService.updateUser(userId, req.body);
 
     if (updatedUser) {
-      res.status(201).json({ message: 'user updated successfully', updatedUser });
+      res.status(200).json({ message: 'user updated successfully', updatedUser });
     } else {
       res.status(404).json({ error: 'user not found' });
     }
@@ -105,12 +105,10 @@ export class UserController {
         console.log('Generated Token:', token);
 
         res.status(200).json({ message: 'login successful', user, token });
-      } else {
-        res.status(401).json({ error: 'invalid credentials' });
       }
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'internal server error' });
+      res.status(500).json({ error: 'internal server error', details: (error as Error).message });
     }
   }
 

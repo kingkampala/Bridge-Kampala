@@ -41,4 +41,19 @@ export class PropertyService {
   async deleteProperty(propertyId: number) {
     await Property.destroy({ where: { id: propertyId } });
   }
+
+  async getLandlordEmail(propertyId: number): Promise<string | null> {
+    const property = await Property.findByPk(propertyId);
+
+    if (property) {
+      const landlord = await User.findByPk(property.landlordId);
+
+      if (landlord) {
+        return landlord.email;
+      }
+    }
+
+    return null;
+  }
+
 }

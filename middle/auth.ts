@@ -22,8 +22,11 @@ export const authenticate = (req: CustomRequest, res: Response, next: NextFuncti
     if (decoded.tokenPayload.userType === 'landlord') {
       req.landlordId = decoded.tokenPayload.userId;
       next();
+    } else if (decoded.tokenPayload.userType === 'tenant') {
+      req.tenantId = decoded.tokenPayload.userId;
+      next();
     } else {
-      return res.status(403).json({ error: 'Denied. Landlord only!' });
+      return res.status(403).json({ error: 'Access denied!' });
     }
   } catch (error) {
     console.error(error);

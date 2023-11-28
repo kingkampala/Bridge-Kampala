@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { controller, httpGet, httpPost, httpPut, httpDelete } from 'inversify-express-utils';
 import { UniqueConstraintError } from 'sequelize';
 import { inject } from 'inversify';
@@ -60,4 +60,36 @@ export class PropertyController {
     await this.propertyService.deleteProperty(propertyId);
     res.sendStatus(200).json({ message: 'property deleted successfully' });
   }
+
+
+  public checkPropertyExists = async (req: CustomRequest, res: Response, next: NextFunction) => {
+    const propertyId = req.body.propertyId;
+  
+    try {
+      if (!propertyId) {
+        return res.status(400).json({ error: 'Property ID is required.' });
+      }
+  
+      /*if (!this.propertyService) {
+        console.error('propertyService is not defined');
+        return res.status(500).json({ error: 'Internal server error' });
+      }*/
+  
+      const property = await this.propertyService.getPropertyById(propertyId);
+  
+      if (!property) {
+        return res.status(404).json({ error: 'Property not found.' });
+      }
+  
+      next();
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
 }
+
+const propertyService = new PropertyService();
+const propertyController = new PropertyController(propertyService);
+
+export default propertyController;

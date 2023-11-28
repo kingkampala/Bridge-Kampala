@@ -1,12 +1,19 @@
 import { Request, Response } from 'express';
-import { controller, httpGet, httpPost, httpPut, httpDelete } from 'inversify-express-utils';
+import { controller, httpGet, httpPost, httpPut, httpDelete, requestBody, response } from 'inversify-express-utils';
 import { inject } from 'inversify';
 import TYPES from '../main/types';
 import { BidService } from '../service/bid';
+import { PropertyService } from '../service/property';
+import { authenticate } from '../middle/auth';
+import propertyController from '../controller/property';
+import { sendBidNotification } from '../nodemailer/config';
 
 @controller('/bids')
 export class BidController {
-  constructor(@inject(TYPES.BidService) private bidService: BidService) {}
+  constructor(
+    @inject(TYPES.BidService) private bidService: BidService,
+    @inject(TYPES.PropertyService) private propertyService: PropertyService
+    ) {}
 
   @httpGet('/')
   async getAllBids(req: Request, res: Response) {
@@ -21,10 +28,22 @@ export class BidController {
     res.json(bid);
   }
 
-  @httpPost('/')
-  async createBid(req: Request, res: Response) {
-    const newBid = await this.bidService.createBid(req.body);
-    res.status(201).json(newBid);
+  @httpPost('/', authenticate, propertyController.checkPropertyExists)
+  async createBid(@requestBody() bidData: { propertyId: number; bidAmount: number, tenantEmail: string }, @response() res: Response) {
+    try{
+      const newBid = await this.bidService.createBid(bidData);
+
+      const landlordEmail = await this.propertyService.getLandlordEmail(bidData.propertyId);
+      if (landlordEmail === null) {
+        throw new Error('Landlord email not found for property ID: ' + bidData.propertyId);
+      }
+      await sendBidNotification(bidData.tenantEmail, landlordEmail, newBid);
+
+      res.status(201).json({ message: 'Bid placed successfully', newBid });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 
   @httpPut('/:id')

@@ -13,22 +13,13 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
-      tenantId: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-      },
       bidAmount: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.FLOAT,
         allowNull: false,
       },
-      status: {
-        type: Sequelize.ENUM('open', 'accepted', 'rejected', 'countered'),
+      tenantEmail: {
+        type: Sequelize.STRING,
         allowNull: false,
-        defaultValue: 'open',
-      },
-      counterBidAmount: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
       },
       createdAt: {
         type: Sequelize.DATE,

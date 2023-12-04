@@ -28,7 +28,7 @@ export class PropertyController {
   async createProperty(req: CustomRequest, res: Response) {
     try {
       if (!req.landlordId) {
-        return res.status(403).json({ error: 'Forbidden. Only landlords can post properties.' });
+        return res.status(403).json({ error: 'Forbidden! Only landlords can post properties.' });
       }
 
       const newProperty = await this.propertyService.createProperty(req, req.body);

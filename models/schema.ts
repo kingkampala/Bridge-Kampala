@@ -114,10 +114,8 @@ Property.init({
 export class Bid extends Model {
   id!: number;
   propertyId!: number;
-  tenantId!: number;
   bidAmount!: number;
-  status!: 'open' | 'accepted' | 'rejected' | 'countered';
-  counterBidAmount!: number | null;
+  tenantEmail!: string;
 }
 
 Bid.init({
@@ -130,20 +128,13 @@ Bid.init({
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  tenantId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
   bidAmount: {
     type: DataTypes.FLOAT,
     allowNull: false,
   },
-  status: {
-    type: DataTypes.ENUM('open', 'accepted', 'rejected', 'countered'),
+  tenantEmail: {
+    type: DataTypes.STRING,
     allowNull: false,
-  },
-  counterBidAmount: {
-    type: DataTypes.FLOAT,
   },
 }, {
   sequelize,
